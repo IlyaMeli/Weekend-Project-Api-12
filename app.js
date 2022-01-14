@@ -33,24 +33,48 @@ app.post("/users", (req, res) => {
   }
 });
 
-app.put("/users/:id", (req, res) => {
-  const { cash } = req.body;
-  const { id } = req.params;
-  const users = getData();
-  const userIdx = users.findIndex((user) => user.id === parseInt(id));
-  users[userIdx].cash = cash;
-  fs.writeFileSync("./app.json", JSON.stringify(users));
-  res.send(users[userIdx]);
-});
+app.put("/users/deposit/:id", (req, res) => {
+  try {
+    const { cash } = req.body;
+    if(!cash){
+      throw new Error("Invalid Value")
+    }
+    const { id } = req.params;
+    const users = getData();
+    const userIdx = users.findIndex((user) => user.id === parseInt(id));
+    users[userIdx].cash += cash;
+    if(cash < 0){
+      throw new Error("Cannot deposit negetive amount")
+    }
+    fs.writeFileSync("./app.json", JSON.stringify(users));
+    res.send(users[userIdx]);
+  } catch (error) {
+    res.send({error: error.message})
+  }
 
-app.put("/users/:id", (req, res) => {
-  const { credit } = req.body;
-  const { id } = req.params;
-  const users = getData();
-  const userIdx = users.findIndex((user) => user.id === parseInt(id));
-  users[userIdx].credit = credit;
-  fs.writeFileSync("./app.json", JSON.stringify(users));
-  res.send(users[userIdx]);
+  });
+
+app.put("/users/credit/:id", (req, res) => {
+  try {
+    const { credit } = req.body;
+    if(!credit){
+      throw new Error("Invalid Value")
+    }
+    const { id } = req.params;
+    const users = getData();
+    const userIdx = users.findIndex((user) => user.id === parseInt(id));
+    users[userIdx].credit = credit;
+  
+    if(credit < 0){
+      throw new Error("Credit cannot be negative")
+    }
+    fs.writeFileSync("./app.json", JSON.stringify(users));
+    res.send(users[userIdx]);
+  } catch (error) {
+    res.send({error: error.message})
+
+  }
+
 });
 
 const PORT = 3000;
