@@ -88,23 +88,67 @@ app.put("/users/credit/:id", (req, res) => {
   }
 });
 // withdraw cash
-app.put("/users/:id/withdraw/", (req, res) => {
+app.put("/users/withdraw/:id", (req, res) => {
   try {
     const { amount } = req.body;
     const { id } = req.params;
     const users = getData();
     const userIdx = users.findIndex((users) => users.id === Number(id));
     const user = users[userIdx];
-    if(amount > user.credit) throw new Error("Dont have enough credit for that amount")
-    if (user.credit > 0) {
-      user.cash -= amount;
+    if (amount > user.credit)
+      throw new Error("Dont have enough credit for that amount");
+    if (user.cash <= 0) {
       user.credit -= amount;
+    }
+    if (user.credit >= 0) {
+      user.cash -= amount;
       users[userIdx] = user;
       fs.writeFileSync("./app.json", JSON.stringify(users));
       res.status(200).send(user);
     } else {
       throw new Error("User has no credit left");
     }
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+//transfer cash
+app.put("/users/transfer/:id", (req, res) => {
+  try {
+    const { to, amount } = req.body;
+    const { id } = req.params;
+    const users = getData();
+    const fromUserIdx = users.findIndex((user) => user.id === Number(id));
+    const fromUser = users[fromUserIdx];
+    const toUserIdx = users.findIndex((user) => user.id === Number(to));
+    const toUser = users[toUserIdx];
+    if(Number(to) === Number(id)){
+      throw new Error("User cant transfer to itself");
+
+    }
+    if (!toUser || !fromUser) {
+      throw new Error("User not found");
+    }
+    if (!fromUser.credit) {
+      throw new Error("User has no cash available for this transaction");
+    }
+    if (amount > fromUser.credit) {
+      throw new Error(
+        "Please Choose smaller amount, user has no credit for this transaction"
+      );
+    }
+    toUser.cash += amount;
+
+    if (fromUser.cash <= 0) {
+      fromUser.credit -= amount;
+    }
+    if (fromUser.credit >= 0) {
+      fromUser.cash -= amount;
+    }
+    users[fromUserIdx] = fromUser;
+    users[toUserIdx] = toUser;
+    fs.writeFileSync("./app.json", JSON.stringify(users));
+    res.status(200).send({ fromUser, toUser });
   } catch (error) {
     res.status(400).send({ error: error.message });
   }
