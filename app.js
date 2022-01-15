@@ -10,11 +10,25 @@ const getData = () => {
   const data = JSON.parse(result);
   return data;
 };
-
+// get all users
 app.get("/users", (req, res) => {
   res.send(getData());
 });
-
+//get one users
+app.get("/users/:id", (req, res) => {
+  try {
+    const users = getData();
+    const { id } = req.params;
+    const user = users.find((user) => user.id === Number(id));
+    if (!user) {
+      throw new Error("User not found");
+    }
+    res.status(200).send(user);
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
+//add new user
 app.post("/users", (req, res) => {
   try {
     const { id, name } = req.body;
@@ -32,49 +46,46 @@ app.post("/users", (req, res) => {
     res.status(400).send({ error: e.message });
   }
 });
-
+//deposit cash to user
 app.put("/users/deposit/:id", (req, res) => {
   try {
     const { cash } = req.body;
-    if(!cash){
-      throw new Error("Invalid Value")
+    if (!cash) {
+      throw new Error("Invalid Value");
     }
     const { id } = req.params;
     const users = getData();
     const userIdx = users.findIndex((user) => user.id === parseInt(id));
     users[userIdx].cash += cash;
-    if(cash < 0){
-      throw new Error("Cannot deposit negetive amount")
+    if (cash < 0) {
+      throw new Error("Cannot deposit negetive amount");
     }
     fs.writeFileSync("./app.json", JSON.stringify(users));
     res.send(users[userIdx]);
   } catch (error) {
-    res.send({error: error.message})
+    res.send({ error: error.message });
   }
-
-  });
-
+});
+// change credit of user
 app.put("/users/credit/:id", (req, res) => {
   try {
     const { credit } = req.body;
-    if(!credit){
-      throw new Error("Invalid Value")
+    if (!credit) {
+      throw new Error("Invalid Value");
     }
     const { id } = req.params;
     const users = getData();
     const userIdx = users.findIndex((user) => user.id === parseInt(id));
     users[userIdx].credit = credit;
-  
-    if(credit < 0){
-      throw new Error("Credit cannot be negative")
+
+    if (credit < 0) {
+      throw new Error("Credit cannot be negative");
     }
     fs.writeFileSync("./app.json", JSON.stringify(users));
     res.send(users[userIdx]);
   } catch (error) {
-    res.send({error: error.message})
-
+    res.send({ error: error.message });
   }
-
 });
 
 const PORT = 3000;
