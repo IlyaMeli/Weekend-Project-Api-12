@@ -87,7 +87,28 @@ app.put("/users/credit/:id", (req, res) => {
     res.send({ error: error.message });
   }
 });
-
+// withdraw cash
+app.put("/users/:id/withdraw/", (req, res) => {
+  try {
+    const { amount } = req.body;
+    const { id } = req.params;
+    const users = getData();
+    const userIdx = users.findIndex((users) => users.id === Number(id));
+    const user = users[userIdx];
+    if(amount > user.credit) throw new Error("Dont have enough credit for that amount")
+    if (user.credit > 0) {
+      user.cash -= amount;
+      user.credit -= amount;
+      users[userIdx] = user;
+      fs.writeFileSync("./app.json", JSON.stringify(users));
+      res.status(200).send(user);
+    } else {
+      throw new Error("User has no credit left");
+    }
+  } catch (error) {
+    res.status(400).send({ error: error.message });
+  }
+});
 const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`listening on port ${PORT}`);
